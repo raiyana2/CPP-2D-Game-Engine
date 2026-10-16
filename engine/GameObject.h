@@ -55,7 +55,6 @@ public:
     virtual void Kill();
 
 
-    virtual void ReceiveNotification(const std::string& message);
 
 
 private:
