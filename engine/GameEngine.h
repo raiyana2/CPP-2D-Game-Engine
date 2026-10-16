@@ -6,12 +6,13 @@ namespace CMPUT350 {
 class GameEngine;
 }
 
+#include <memory>
+#include <vector>
+
 #include "EngineView.h"
 #include "GameObject.h"
 #include "MathUtil.h"
 #include <SFML/Graphics.hpp>
-#include <vector>
-#include <memory>
 
 namespace CMPUT350 {
 
@@ -40,6 +41,18 @@ public:
      * @return No value.
      */
     void AddGameObject(std::shared_ptr<GameObject> gameObject) override;
+
+    /** Returns an iterator to the first active game object. */
+    EngineView::const_iterator cbegin() const override;
+
+    /** Returns an iterator past the final active game object. */
+    EngineView::const_iterator cend() const override;
+
+    /** Returns an iterator to the first active game object. */
+    EngineView::const_iterator begin() const override;
+
+    /** Returns an iterator past the final active game object. */
+    EngineView::const_iterator end() const override;
 
     /** Runs the event, update, collision, and rendering loop until the window closes.
      * @return No value.

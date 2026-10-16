@@ -7,13 +7,19 @@
 
 namespace CMPUT350 {
 
+class NotificationManager;
+
 class GameContext {
 public:
     /** Engine interface used by game objects to add objects during callbacks. */
-    EngineView *mEngineView;
+    EngineView* mEngineView;
 
     /** Drawing interface for the current render window. */
-    DrawContext *ScreenContext;
+    DrawContext* ScreenContext;
+    DrawContext* GUIContext;
+    std::weak_ptr<GameObject> CurrObject;
+    NotificationManager* mNotificationManager;
+    int currentFrame;
 };
 
 }  // namespace CMPUT350

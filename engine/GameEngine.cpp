@@ -1,9 +1,9 @@
 #include "GameEngine.h"
-#include "GameContext.h"
+
 #include "CollisionObject.h"
 #include "DrawContext.h"
+#include "GameContext.h"
 #include "GraphicsObject.h"
-
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 
@@ -15,13 +15,12 @@ GameEngine::GameEngine(unsigned int width, unsigned int height, const std::strin
     mWindow = std::make_shared<sf::RenderWindow>(sf::VideoMode({width, height}), name);
     mFont = std::make_shared<sf::Font>();
 
-    // Sample font loading code    
-	if (!mFont->openFromMemory(&_font, _font_len))
-    	{
-    		fprintf(stderr, "WARNING: Font did not load.\n");
-    	}
+    // Sample font loading code
+    if (!mFont->openFromMemory(&_font, _font_len)) {
+        fprintf(stderr, "WARNING: Font did not load.\n");
+    }
 
-    mWindow->setFramerateLimit(30); // Limit the framerate to 30 frames per second  
+    mWindow->setFramerateLimit(30);  // Limit the framerate to 30 frames per second
 }
 
 GameEngine::~GameEngine() {
@@ -37,6 +36,14 @@ void GameEngine::AddGameObject(std::shared_ptr<GameObject> gameObject) {
     }
 }
 
+EngineView::const_iterator GameEngine::cbegin() const { return mGameObjects.cbegin(); }
+
+EngineView::const_iterator GameEngine::cend() const { return mGameObjects.cend(); }
+
+EngineView::const_iterator GameEngine::begin() const { return mGameObjects.cbegin(); }
+
+EngineView::const_iterator GameEngine::end() const { return mGameObjects.cend(); }
+
 /** Runs one frame at a time until the render window closes.
  * Each frame removes dead objects, activates queued objects, dispatches input,
  * updates active objects, reports overlapping collision pairs to both objects,
@@ -48,9 +55,9 @@ void GameEngine::Run() {
     DrawContext drawContext(mWindow, mFont);
 
     GameContext context;
-    
+
     context.mEngineView = this;
-    context.ScreenContext = &drawContext;  
+    context.ScreenContext = &drawContext;
 
     while (mWindow->isOpen())  // window is open
     {
@@ -91,8 +98,6 @@ void GameEngine::Run() {
                         }
                     }
                 }
-
-
             }
         }
 

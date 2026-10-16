@@ -49,7 +49,7 @@ public:
      * @param c RGB fill color.
      * @return No value.
      */
-    void DrawText(const std::string &text, int pixelSize, Point2D p, RGBColor c);
+    void DrawText(const std::string& text, int pixelSize, Point2D p, RGBColor c);
 
     /** Draws text centered on a pixel position using its local visual bounds.
      * @param text Text to display.
@@ -58,7 +58,7 @@ public:
      * @param c RGB fill color.
      * @return No value.
      */
-    void DrawCenteredText(const std::string &text, int pixelSize, Point2D p, RGBColor c);
+    void DrawCenteredText(const std::string& text, int pixelSize, Point2D p, RGBColor c);
 
     /** Draws a filled circle centered at a pixel position.
      * @param p Circle center in window coordinates.
@@ -103,6 +103,19 @@ public:
     int GetWindowHeight();
 
 private:
+    std::shared_ptr<sf::RenderWindow> mWindow;
+    std::shared_ptr<sf::Font> mFont;
+    
+    friend class GameEngine;
+    void SetContextOffset(Point2D p);
+    void SetContextRotation(float rotation);
+    Point2D Transform(Point2D p);
+    Point2D ReverseTransform(Point2D p);
+    Rect Transform(Rect r);
+
+    Point2D mContextOffset;
+    float mContextRotation;
+
     std::shared_ptr<sf::RenderWindow> mWindow;
     std::shared_ptr<sf::Font> mFont;
 };
