@@ -9,6 +9,7 @@ DrawContext::DrawContext(std::shared_ptr<sf::RenderWindow> window, std::shared_p
     : mContextOffset(0.0f, 0.0f), mContextRotation(0.0f), mWindow(window), mFont(font) {}
 
 void DrawContext::DrawCenteredText(const std::string& text, int pixelSize, Point2D p, RGBColor c) {
+    p = Transform(p);
     sf::Text drawable(*mFont, text, pixelSize);
 
     // Calculate the bounding box of the text
@@ -26,6 +27,7 @@ void DrawContext::DrawCenteredText(const std::string& text, int pixelSize, Point
 }
 
 void DrawContext::DrawText(const std::string& text, int pixelSize, Point2D p, RGBColor c) {
+    p = Transform(p);
     sf::Text drawable(*mFont, text, pixelSize);
 
     drawable.setPosition(sf::Vector2f(p.x, p.y));
@@ -36,6 +38,7 @@ void DrawContext::DrawText(const std::string& text, int pixelSize, Point2D p, RG
 }
 
 void DrawContext::DrawCircle(Point2D p, float radius, RGBColor c) {
+    p = Transform(p);
     sf::CircleShape circle(radius);
 
     circle.setPosition(
@@ -47,6 +50,7 @@ void DrawContext::DrawCircle(Point2D p, float radius, RGBColor c) {
 }
 
 void DrawContext::DrawRect(Rect r, RGBColor c) {
+    r = Transform(r);
     sf::RectangleShape rectangle(sf::Vector2f(r.width, r.height));
 
     rectangle.setPosition(sf::Vector2f(r.topLeft.x, r.topLeft.y));
@@ -57,6 +61,7 @@ void DrawContext::DrawRect(Rect r, RGBColor c) {
 }
 
 void DrawContext::FrameRect(Rect r, float width, RGBColor c) {
+    r = Transform(r);
     sf::RectangleShape rectangle(sf::Vector2f(r.width, r.height));
 
     rectangle.setPosition(sf::Vector2f(r.topLeft.x, r.topLeft.y));
@@ -83,6 +88,8 @@ void DrawContext::FrameRect(Rect r, float width, RGBColor c) {
  * relative to the world offset and rendered onto the associated window.
  */
 void DrawContext::DrawLine(Point2D from, Point2D to, float width, RGBColor c) {
+    from = Transform(from);
+    to = Transform(to);
     Point2D direction = to - from;
 
     if (direction == Point2D(0, 0)) {

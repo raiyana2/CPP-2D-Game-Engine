@@ -11,6 +11,7 @@ class GameEngine;
 #include <unordered_map>
 #include <vector>
 
+#include "CollisionObject.h"
 #include "EngineView.h"
 #include "GameObject.h"
 #include "MathUtil.h"
@@ -76,6 +77,34 @@ private:
     NotificationManager mNotificationManager;
     std::unordered_map<int, std::vector<std::string>> mKeyDownNotifications;
     std::unordered_map<int, std::vector<std::string>> mKeyUpNotifications;
+
+    /**
+     * Converts a collision shape from object-local coordinates to world coordinates.
+     *
+     * @param shape Local collision shape.
+     * @param context Drawing context containing the object's transform.
+     * @return Shape transformed into world coordinates.
+     */
+    Shape TransformShape(const Shape& shape, DrawContext& context);
+
+    /**
+     * Tests two world-space component shapes for collision.
+     *
+     * @param first First shape.
+     * @param second Second shape.
+     * @param collisionPoint Receives a line collision point when one exists.
+     * @param hasCollisionPoint Receives true when the collision has a line point.
+     * @return True if the shapes collide.
+     */
+    bool CheckShapeCollision(const Shape& first, const Shape& second, Point2D& collisionPoint,
+                             bool& hasCollisionPoint);
+
+    /**
+     * Performs broad-phase and component-level collision processing.
+     *
+     * @param context Context used to transform collision geometry.
+     */
+    void ProcessCollisions(DrawContext& context);
 };
 
 }  // namespace CMPUT350
