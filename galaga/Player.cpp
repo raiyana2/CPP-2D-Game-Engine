@@ -130,3 +130,5 @@ const CMPUT350::Rect& Player::GetBounds() {
     // TODO: Update code
     return mBounds;
 }
+
+bool Player::IsStatic() const { return false; }
