@@ -2,6 +2,9 @@
 #include "Player.h"
 #include "Galaga.h"
 
+#include "GameContext.h"
+#include "DrawContext.h"
+
 const bool gUseCollisionDemo = true;
 
 class Ball : public CMPUT350::CollisionObject
