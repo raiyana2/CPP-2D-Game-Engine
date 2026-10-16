@@ -8,6 +8,14 @@
 
 class Bullet;
 
+namespace CMPUT350
+
+{
+    class EngineView;
+    class NotificationManager;
+}
+
+
 class Player : public CMPUT350::CollisionObject
 {
 public:
@@ -52,6 +60,9 @@ private:
     std::weak_ptr<CMPUT350::GameObject> mSelf;
 
     float mScreenWidth;
+
+    bool mMoveLeft;
+    bool mMoveRight;
 };
 
 #endif

@@ -8,26 +8,16 @@ namespace CMPUT350 {
 
 class GameContext;
 
-
-/** A game object with background and foreground rendering callbacks. */
-class GraphicsObject : public GameObject {
+class GraphicsObject : public GameObject
+{
 public:
-    /** Renders content behind foreground objects; the base implementation does nothing.
-     * @param context Engine and drawing services for this callback.
-     * @return No value.
-     */
-    virtual void RenderBackground(GameContext *context);
-
-    /** Renders foreground content; the base implementation does nothing.
-     * @param context Engine and drawing services for this callback.
-     * @return No value.
-     */
-    virtual void RenderForeground(GameContext *context);
+    virtual void RenderBackground(GameContext* context);
+    virtual void RenderForeground(GameContext* context);
 
     virtual Point2D GetLocation() const = 0;
     virtual float GetRotation() const = 0;
 };
 
-}  // namespace CMPUT350
+}
 
 #endif
