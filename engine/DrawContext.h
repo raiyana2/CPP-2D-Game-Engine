@@ -105,7 +105,7 @@ public:
 private:
     std::shared_ptr<sf::RenderWindow> mWindow;
     std::shared_ptr<sf::Font> mFont;
-    
+
     friend class GameEngine;
     void SetContextOffset(Point2D p);
     void SetContextRotation(float rotation);
@@ -115,9 +115,6 @@ private:
 
     Point2D mContextOffset;
     float mContextRotation;
-
-    std::shared_ptr<sf::RenderWindow> mWindow;
-    std::shared_ptr<sf::Font> mFont;
 };
 
 }  // namespace CMPUT350

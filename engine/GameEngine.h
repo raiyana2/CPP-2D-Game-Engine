@@ -7,11 +7,14 @@ class GameEngine;
 }
 
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "EngineView.h"
 #include "GameObject.h"
 #include "MathUtil.h"
+#include "NotificationManager.h"
 #include <SFML/Graphics.hpp>
 
 namespace CMPUT350 {
@@ -59,11 +62,20 @@ public:
      */
     void Run();
 
+    /** Registers a notification for a key-press event. */
+    void InstallKeyDownNotification(int key, const std::string& notification) override;
+
+    /** Registers a notification for a key-release event. */
+    void InstallKeyUpNotification(int key, const std::string& notification) override;
+
 private:
     std::shared_ptr<sf::RenderWindow> mWindow;
     std::shared_ptr<sf::Font> mFont;
     std::vector<std::shared_ptr<GameObject>> mGameObjects;
     std::vector<std::shared_ptr<GameObject>> mPendingGameObjects;
+    NotificationManager mNotificationManager;
+    std::unordered_map<int, std::vector<std::string>> mKeyDownNotifications;
+    std::unordered_map<int, std::vector<std::string>> mKeyUpNotifications;
 };
 
 }  // namespace CMPUT350
