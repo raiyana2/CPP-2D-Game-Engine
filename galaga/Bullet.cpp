@@ -106,6 +106,8 @@ void Bullet::RenderForeground(CMPUT350::GameContext* context)
         return;
     }
 
+    if (!IsAlive()) return;
+
     CMPUT350::RGBColor color = CMPUT350::Colors::yellow;
 
     if (!mPlayerBullet)

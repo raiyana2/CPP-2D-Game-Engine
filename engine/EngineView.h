@@ -22,14 +22,20 @@ public:
      */
     virtual void AddGameObject(std::shared_ptr<GameObject> gameObject) = 0;
 
+    /** Associates a scancode press with a notification message. */
     virtual void InstallKeyDownNotification(int key, const std::string &notification) = 0;
+    /** Associates a scancode release with a notification message. */
     virtual void InstallKeyUpNotification(int key, const std::string &notification) = 0;
 
     using const_iterator = tGameObject::const_iterator;
 
+    /** Returns the first active object for read-only iteration. */
     virtual const_iterator cbegin() const = 0;
+    /** Returns the past-the-end active-object iterator. */
     virtual const_iterator cend() const = 0;
+    /** Returns the first active object for range-based loops. */
     virtual const_iterator begin() const = 0;
+    /** Returns the past-the-end iterator for range-based loops. */
     virtual const_iterator end() const = 0;
 
 };

@@ -68,14 +68,14 @@ public:
      */
     void DrawCircle(Point2D p, float radius, RGBColor c);
 
-    /** Draws a filled axis-aligned rectangle.
+    /** Draws a filled local rectangle with the current object rotation.
      * @param r Rectangle bounds in window coordinates.
      * @param c RGB fill color.
      * @return No value.
      */
     void DrawRect(Rect r, RGBColor c);
 
-    /** Draws only the outline of an axis-aligned rectangle.
+    /** Draws the outline of a local rectangle with the current object rotation.
      * @param r Rectangle bounds in window coordinates.
      * @param width Outline thickness in pixels.
      * @param c RGB outline color.
@@ -92,12 +92,12 @@ public:
      */
     void DrawLine(Point2D from, Point2D to, float width, RGBColor c);
 
-    /** Gets the current render-window width in pixels.
+    /** Gets the logical drawing canvas width, independent of physical window scaling.
      * @return Window width.
      */
     int GetWindowWidth();
 
-    /** Gets the current render-window height in pixels.
+    /** Gets the logical drawing canvas height, independent of physical window scaling.
      * @return Window height.
      */
     int GetWindowHeight();
@@ -107,10 +107,15 @@ private:
     std::shared_ptr<sf::Font> mFont;
 
     friend class GameEngine;
+    /** Sets the world translation applied to subsequent local drawing commands. */
     void SetContextOffset(Point2D p);
+    /** Sets the rotation in radians applied before translation. */
     void SetContextRotation(float rotation);
+    /** Rotates a local point then adds the world offset. */
     Point2D Transform(Point2D p);
+    /** Removes the world offset then applies the inverse rotation. */
     Point2D ReverseTransform(Point2D p);
+    /** Returns the axis-aligned world bounds of all four transformed corners. */
     Rect Transform(Rect r);
 
     Point2D mContextOffset;

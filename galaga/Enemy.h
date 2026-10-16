@@ -70,6 +70,8 @@ protected:
     std::vector<CMPUT350::Point2D> mPath;
 
     float mPathTime;
+    CMPUT350::Bezier mCurve;
+    float mPathDistance;
 
     bool mEntering;
     bool mAttacking;

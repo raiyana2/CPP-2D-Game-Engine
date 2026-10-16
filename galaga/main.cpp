@@ -5,7 +5,7 @@
 #include "GameContext.h"
 #include "DrawContext.h"
 
-const bool gUseCollisionDemo = true;
+const bool gUseCollisionDemo = false;
 
 class Ball : public CMPUT350::CollisionObject
 {

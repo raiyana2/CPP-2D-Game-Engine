@@ -18,6 +18,8 @@ Enemy::Enemy(
       mBounds(-18.0f, -18.0f, 36.0f, 36.0f),
       mPath(path),
       mPathTime(0.0f),
+      mCurve(path),
+      mPathDistance(0.0f),
       mEntering(true),
       mAttacking(false),
       mInFormation(false),
@@ -49,26 +51,9 @@ void Enemy::Update(CMPUT350::GameContext* context)
 
         if (segmentCount > 0)
         {
-            CMPUT350::Point2D slope =
-                CMPUT350::Bezier::GetSlope(
-                    mPath,
-                    mPathTime
-                );
-
-            float slopeLength =
-                std::sqrt(
-                    slope.x * slope.x +
-                    slope.y * slope.y
-                );
-
-            float amount = 0.02f;
-
-            if (slopeLength > 0.001f)
-            {
-                amount = 3.0f / slopeLength;
-            }
-
-            mPathTime += amount;
+            mPathDistance += 3.0f;
+            mPathTime = mPathDistance >= mCurve.GetLength()
+                ? static_cast<float>(segmentCount) : mCurve.GetTimeAtDistance(mPathDistance);
 
             if (mPathTime >= segmentCount)
             {
@@ -231,6 +216,8 @@ void Enemy::BeginAttack(
 {
     mPath = path;
     mPathTime = 0.0f;
+    mCurve = CMPUT350::Bezier(path);
+    mPathDistance = 0.0f;
 
     mAttackTarget = target;
 

@@ -20,6 +20,7 @@ void DrawContext::DrawCenteredText(const std::string& text, int pixelSize, Point
                                     bounds.position.y + bounds.size.y / 2.0f));
 
     drawable.setPosition(sf::Vector2f(p.x, p.y));
+    drawable.setRotation(sf::radians(mContextRotation));
 
     drawable.setFillColor(sf::Color(c.r, c.g, c.b));
 
@@ -31,6 +32,7 @@ void DrawContext::DrawText(const std::string& text, int pixelSize, Point2D p, RG
     sf::Text drawable(*mFont, text, pixelSize);
 
     drawable.setPosition(sf::Vector2f(p.x, p.y));
+    drawable.setRotation(sf::radians(mContextRotation));
 
     drawable.setFillColor(sf::Color(c.r, c.g, c.b));
 
@@ -50,10 +52,13 @@ void DrawContext::DrawCircle(Point2D p, float radius, RGBColor c) {
 }
 
 void DrawContext::DrawRect(Rect r, RGBColor c) {
-    r = Transform(r);
-    sf::RectangleShape rectangle(sf::Vector2f(r.width, r.height));
-
-    rectangle.setPosition(sf::Vector2f(r.topLeft.x, r.topLeft.y));
+    sf::ConvexShape rectangle(4);
+    Point2D corners[] = {r.topLeft, r.topLeft + Point2D(r.width, 0),
+                         r.topLeft + Point2D(r.width, r.height), r.topLeft + Point2D(0, r.height)};
+    for (int i = 0; i < 4; ++i) {
+        Point2D p = Transform(corners[i]);
+        rectangle.setPoint(i, sf::Vector2f(p.x, p.y));
+    }
 
     rectangle.setFillColor(sf::Color(c.r, c.g, c.b));
 
@@ -61,10 +66,13 @@ void DrawContext::DrawRect(Rect r, RGBColor c) {
 }
 
 void DrawContext::FrameRect(Rect r, float width, RGBColor c) {
-    r = Transform(r);
-    sf::RectangleShape rectangle(sf::Vector2f(r.width, r.height));
-
-    rectangle.setPosition(sf::Vector2f(r.topLeft.x, r.topLeft.y));
+    sf::ConvexShape rectangle(4);
+    Point2D corners[] = {r.topLeft, r.topLeft + Point2D(r.width, 0),
+                         r.topLeft + Point2D(r.width, r.height), r.topLeft + Point2D(0, r.height)};
+    for (int i = 0; i < 4; ++i) {
+        Point2D p = Transform(corners[i]);
+        rectangle.setPoint(i, sf::Vector2f(p.x, p.y));
+    }
 
     rectangle.setFillColor(sf::Color::Transparent);  // No fill
 
@@ -119,9 +127,9 @@ void DrawContext::DrawLine(Point2D from, Point2D to, float width, RGBColor c) {
     mWindow->draw(lineShape);
 }
 
-int DrawContext::GetWindowWidth() { return mWindow->getSize().x; }
+int DrawContext::GetWindowWidth() { return static_cast<int>(mWindow->getView().getSize().x); }
 
-int DrawContext::GetWindowHeight() { return mWindow->getSize().y; }
+int DrawContext::GetWindowHeight() { return static_cast<int>(mWindow->getView().getSize().y); }
 
 void DrawContext::SetContextOffset(Point2D p) { mContextOffset = p; }
 

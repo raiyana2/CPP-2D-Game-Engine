@@ -1,0 +1,172 @@
+# CMPUT 350 — Project Assignment 1B
+
+## Overview
+
+This project is a C++20/SFML implementation of Galaga built using a reusable game-object engine.
+
+The engine supports:
+- Game object initialization, updates and late updates
+- Collision detection
+- Object translation and rotation
+- Keyboard notifications
+- Notification-based communication between objects
+- Bezier curve movement
+- Separate world rendering and UI rendering
+
+### Controls
+
+- `5` — Insert coin
+- `1` — Start game
+- `A / D` — Move left/right
+- `Left / Right Arrow` — Move left/right
+- `Space` — Shoot
+
+The normal `main.cpp` starts Galaga. A collision demo can also be enabled for testing the collision system.
+
+---
+
+## Game Flow
+
+The game uses the following states:
+
+### Waiting
+The player inserts a coin with `5` and starts the game with `1`.
+
+### Startup
+Displays the current level before enemies begin appearing.
+
+### Waves
+Five waves of eight enemies enter using Bezier paths and move into formation.
+
+### Gameplay
+Enemies periodically leave formation to attack the player and later return.
+
+The player can move and shoot while avoiding enemy bullets.
+
+### Game Over
+When all player lives are lost, the game displays the game-over screen and eventually returns to the waiting state.
+
+---
+
+## Engine Features
+
+### Collision System
+
+Collision objects can contain lines, circles and rectangles.
+
+The engine first checks bounding boxes and then checks the actual collision shapes. Rotated objects are handled using object transformations.
+
+For line collisions, the engine can return the first collision point along the line.
+
+### Notification System
+
+`NotificationManager` allows game objects to register for named notifications.
+
+Examples include:
+
+- `MoveLeftDown`
+- `MoveLeftUp`
+- `MoveRightDown`
+- `MoveRightUp`
+- `Shoot`
+- `InsertCoin`
+- `StartGame`
+- `PlayerDied`
+- `EnemyDied`
+
+Weak pointers are used so the notification manager does not keep destroyed objects alive.
+
+### Bezier Movement
+
+Bezier curves are used for enemy entry and attack paths.
+
+The implementation supports multiple cubic Bezier segments. Enemies use an approximate arc-length table so they move at a more consistent speed along the curve.
+
+---
+
+# Team Contributions
+
+## Utsha Samantha — Engine Side
+
+Utsha primarily worked on the game-engine implementation, including:
+
+- `engine/GameEngine.cpp`
+- `engine/GameEngine.h`
+- `engine/DrawContext.cpp`
+- `engine/DrawContext.h`
+- `engine/MathUtil.h`
+- Collision helper functions in `MathUtil`
+- `engine/CollisionObject.h`
+- `engine/EngineView.h`
+- GameEngine iterator support
+- Keyboard event routing inside `GameEngine.cpp`
+- GameEngine collision processing
+- Object translation and rotation handling
+- Integration of the engine systems
+
+## Raiyana Rahman — Gameplay Side
+
+Raiyana primarily worked on the Galaga gameplay implementation, including:
+
+- `galaga/Player.cpp`
+- `galaga/Player.h`
+- `galaga/Bullet.cpp`
+- `galaga/Bullet.h`
+- `galaga/Enemy.cpp`
+- `galaga/Enemy.h`
+- Enemy subclasses
+- `galaga/Galaga.cpp`
+- `galaga/Galaga.h`
+- `engine/Bezier.cpp`
+- `engine/Bezier.h`
+- `engine/NotificationManager.cpp`
+- `engine/NotificationManager.h`
+- Player movement and shooting
+- Enemy movement and attack behavior
+- Enemy waves and formation logic
+- Scoring and lives
+- Game-state transitions
+- Final gameplay integration
+
+Both team members worked together on merging, debugging, testing and final integration.
+
+---
+
+# AI Usage Disclosure
+
+AI tools were used during development for debugging, code review, implementation suggestions, documentation and testing assistance.
+
+Examples of prompts included:
+
+1. Asking for help reviewing the code against the assignment rubric.
+2. Asking for help fixing compiler errors and integration problems.
+3. Asking for help implementing or reviewing:
+   - Bezier curves
+   - Notification management
+   - Collision handling
+   - Enemy movement
+
+AI contributed to portions of:
+
+- Collision geometry and collision processing
+- Bezier movement and arc-length approximation
+- NotificationManager
+- Bullet collision behavior
+- README/project documentation
+
+
+---
+
+# Technical Reflection
+
+Several problems were found during development
+
+- Using only an axis-aligned bounding box for a rotated rectangle could cause false collisions.
+- Clearing weak pointers does not automatically remove objects still owned by the engine.
+- Bullets needed collision ordering so one destroyed bullet would not damage multiple enemies in the same frame.
+- Enemy movement needed more consistent speed along Bezier curves.
+
+The final implementation handles these cases using shape-based collision checks, object cleanup, ordered collision handling and approximate Bezier arc-length movement.
+
+
+---

@@ -275,7 +275,7 @@ struct Line {
     }
 
     /** Finds an intersection between this finite segment and another.
-     * Parallel or collinear segments return false.
+     * Collinear overlaps return the first overlapping point along this directed segment.
      * @param other Segment to test against.
      * @param crossingPoint Receives the intersection point when one exists; unchanged otherwise.
      * @return True if the segments intersect; otherwise false.
@@ -286,9 +286,21 @@ struct Line {
 
         float denominator = Point2D::Cross(firstDirection, secondDirection);
 
-        // Parallel lines do not have one crossing point.
-        if (denominator == 0.0f) {
-            return false;
+        if (std::abs(denominator) < 0.000001f) {
+            float lengthSquared = firstDirection.Dot(firstDirection);
+            if (lengthSquared == 0) {
+                if (other.ClosestPoint(p1).Distance(p1) > 0.00001f) return false;
+                crossingPoint = p1;
+                return true;
+            }
+            if (std::abs(Point2D::Cross(other.p1 - p1, firstDirection)) > 0.00001f) return false;
+            float t1 = (other.p1 - p1).Dot(firstDirection) / lengthSquared;
+            float t2 = (other.p2 - p1).Dot(firstDirection) / lengthSquared;
+            float entry = std::max(0.0f, std::min(t1, t2));
+            float exit = std::min(1.0f, std::max(t1, t2));
+            if (entry > exit) return false;
+            crossingPoint = p1 + firstDirection * entry;
+            return true;
         }
 
         Point2D difference = other.p1 - p1;
@@ -608,44 +620,17 @@ inline bool LineLineCollision(const Line& first, const Line& second, Point2D& co
  */
 inline bool LineCircleCollision(const Line& line, const Circle& circle, Point2D& collisionPoint) {
     Point2D direction = line.p2 - line.p1;
-    float lineLength = line.Length();
-
-    // The line has no direction.
-    if (lineLength == 0.0f) {
-        if (line.p1.Distance(circle.center) <= circle.radius) {
-            collisionPoint = line.p1;
-            return true;
-        }
-
-        return false;
-    }
-
-    // If the line starts inside the circle, it collides immediately.
-    if (line.p1.Distance(circle.center) <= circle.radius) {
-        collisionPoint = line.p1;
-        return true;
-    }
-
-    // Find p: the closest point on the segment to the circle center.
-    Point2D closestPoint = line.ClosestPoint(circle.center);
-
-    float closestDistance = closestPoint.Distance(circle.center);
-
-    // The closest point is still outside the circle.
-    if (closestDistance > circle.radius) {
-        return false;
-    }
-
-    // Find q using the Pythagorean theorem.
-    float distanceToIntersection =
-        std::sqrt(circle.radius * circle.radius - closestDistance * closestDistance);
-
-    // Convert the line direction to a unit vector.
-    direction.Normalize();
-
-    // Move backward from the closest point toward p1.
-    collisionPoint = closestPoint - direction * distanceToIntersection;
-
+    Point2D offset = line.p1 - circle.center;
+    float c = offset.Dot(offset) - circle.radius * circle.radius;
+    if (c <= 0) { collisionPoint = line.p1; return true; }
+    float a = direction.Dot(direction);
+    if (a == 0) return false;
+    float b = 2 * offset.Dot(direction);
+    float discriminant = b * b - 4 * a * c;
+    if (discriminant < 0) return false;
+    float t = (-b - std::sqrt(discriminant)) / (2 * a);
+    if (t < 0 || t > 1) return false;
+    collisionPoint = line.p1 + direction * t;
     return true;
 }
 

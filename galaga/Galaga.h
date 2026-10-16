@@ -37,6 +37,9 @@ private:
         GameOver
     };
 
+    /** Kills this round's actors, including bullets, before dropping weak references. */
+    void ClearRound();
+
     void SpawnPlayer(CMPUT350::GameContext* context);
     void SpawnWave(CMPUT350::GameContext* context);
 

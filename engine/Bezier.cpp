@@ -6,8 +6,32 @@ namespace CMPUT350
 {
 
 Bezier::Bezier(const std::vector<Point2D>& pts)
-    : mPoints(pts)
+    : mPoints(pts), mLengths{0.0f}, mTimes{0.0f}
 {
+    int segments = pts.size() >= 4 ? static_cast<int>((pts.size() - 1) / 3) : 0;
+    Point2D previous = GetPoint(0);
+    for (int sample = 1; sample <= segments * 128; ++sample) {
+        float t = sample / 128.0f;
+        Point2D current = GetPoint(t);
+        mLengths.push_back(mLengths.back() + static_cast<float>(previous.Distance(current)));
+        mTimes.push_back(t);
+        previous = current;
+    }
+}
+
+float Bezier::GetLength() const
+{
+    return mLengths.back();
+}
+
+float Bezier::GetTimeAtDistance(float distance) const
+{
+    if (distance <= 0 || GetLength() == 0) return 0;
+    if (distance >= GetLength()) return mTimes.back();
+    auto next = std::lower_bound(mLengths.begin(), mLengths.end(), distance);
+    std::size_t i = static_cast<std::size_t>(next - mLengths.begin());
+    float fraction = (distance - mLengths[i - 1]) / (mLengths[i] - mLengths[i - 1]);
+    return mTimes[i - 1] + fraction * (mTimes[i] - mTimes[i - 1]);
 }
 
 Point2D Bezier::GetPoint(float t) const

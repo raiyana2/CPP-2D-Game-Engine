@@ -1,6 +1,7 @@
 #include "Galaga.h"
 
 #include "Enemy.h"
+#include "Bullet.h"
 #include "Player.h"
 #include "GameContext.h"
 #include "NotificationManager.h"
@@ -145,13 +146,15 @@ void Galaga::Initialize(CMPUT350::GameContext* context)
 
 void Galaga::ReceiveNotification(const std::string& message)
 {
+    if (message != "InsertCoin" && message != "StartGame" &&
+        (mState == State::Waiting || mState == State::GameOver)) return;
     if (message == "InsertCoin")
     {
-        mCoinInserted = true;
+        if (mState == State::Waiting) mCoinInserted = true;
     }
     else if (message == "StartGame")
     {
-        mStartRequested = true;
+        if (mState == State::Waiting && mCoinInserted) mStartRequested = true;
     }
     else if (message == "EnemyDied")
     {
@@ -201,6 +204,8 @@ void Galaga::Update(CMPUT350::GameContext* context)
 {
     if (mGameOverRequested)
     {
+        ClearRound();
+        mPlayerNeedsRespawn = false;
         mState = State::GameOver;
         mStateStartFrame = context->currentFrame;
         mGameOverRequested = false;
@@ -220,8 +225,10 @@ void Galaga::Update(CMPUT350::GameContext* context)
                 mWave = 0;
                 mEnemiesAlive = 0;
 
-                mEnemies.clear();
-
+                ClearRound();
+                mCoinInserted = false;
+                mStartRequested = false;
+                mPlayerNeedsRespawn = false;
                 SpawnPlayer(context);
 
                 mState = State::Startup;
@@ -264,7 +271,7 @@ void Galaga::Update(CMPUT350::GameContext* context)
                 mState = State::Gameplay;
             }
 
-            if (mPlayerNeedsRespawn &&
+            if (mPlayerNeedsRespawn && mWave >= 5 &&
                 AllEnemiesInFormation())
             {
                 SpawnPlayer(context);
@@ -283,7 +290,9 @@ void Galaga::Update(CMPUT350::GameContext* context)
                 mLevel++;
 
                 mWave = 0;
-                mEnemies.clear();
+                ClearRound();
+                SpawnPlayer(context);
+                mPlayerNeedsRespawn = false;
 
                 mState = State::Startup;
                 mStateStartFrame = context->currentFrame;
@@ -306,7 +315,7 @@ void Galaga::Update(CMPUT350::GameContext* context)
             {
                 auto player = mPlayer.lock();
 
-                if (player)
+                if (player && player->IsAlive() && !mPlayerNeedsRespawn)
                 {
                     for (auto& weakEnemy : mEnemies)
                     {
@@ -351,6 +360,25 @@ void Galaga::Update(CMPUT350::GameContext* context)
 
 
 
+
+void Galaga::ClearRound()
+{
+    if (mEngineView) {
+        for (const auto& object : *mEngineView) {
+            if (std::dynamic_pointer_cast<Enemy>(object) ||
+                std::dynamic_pointer_cast<Player>(object) ||
+                std::dynamic_pointer_cast<Bullet>(object)) object->Kill();
+        }
+    }
+    // Weak references also cover enemies/player queued for activation next frame.
+    for (const auto& weakEnemy : mEnemies) {
+        if (auto enemy = weakEnemy.lock()) enemy->Kill();
+    }
+    if (auto player = mPlayer.lock()) player->Kill();
+    mEnemies.clear();
+    mPlayer.reset();
+    mEnemiesAlive = 0;
+}
 
 void Galaga::SpawnPlayer(CMPUT350::GameContext* context)
 {
@@ -443,16 +471,12 @@ void Galaga::SpawnWave(CMPUT350::GameContext* context)
 
 bool Galaga::AllEnemiesInFormation() const
 {
-    bool foundEnemy = false;
-
     for (const auto& weakEnemy : mEnemies)
     {
         auto enemy = weakEnemy.lock();
 
         if (enemy && enemy->IsAlive())
         {
-            foundEnemy = true;
-
             if (!enemy->IsInFormation())
             {
                 return false;
@@ -460,7 +484,8 @@ bool Galaga::AllEnemiesInFormation() const
         }
     }
 
-    return foundEnemy;
+    // Empty formations are ready too: all enemies may have died during entry.
+    return true;
 }
 
 
@@ -498,7 +523,7 @@ void Galaga::RenderUI(CMPUT350::GameContext* context)
     if (mState == State::Waiting)
     {
         context->GUIContext->DrawCenteredText(
-            "PRESS 5 FOR COIN - 1 TO START",
+            mCoinInserted ? "CREDIT 1 - PRESS 1 TO START" : "PRESS 5 TO INSERT COIN",
             26,
             CMPUT350::Point2D(
                 mWidth / 2.0f,
@@ -507,10 +532,11 @@ void Galaga::RenderUI(CMPUT350::GameContext* context)
             CMPUT350::Colors::white
         );
     }
-    else if (mState == State::Startup)
+    else if (mState == State::Startup || mPlayerNeedsRespawn)
     {
         context->GUIContext->DrawCenteredText(
-            "LEVEL " + std::to_string(mLevel),
+            mPlayerNeedsRespawn ? "LIVES " + std::to_string(mLives)
+                                : "LEVEL " + std::to_string(mLevel),
             30,
             CMPUT350::Point2D(
                 mWidth / 2.0f,
