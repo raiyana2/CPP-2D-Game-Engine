@@ -1,6 +1,7 @@
 #ifndef MATHUTIL_H
 #define MATHUTIL_H
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 
@@ -128,7 +129,8 @@ struct Point2D {
     }
 
     /** Divides both coordinates by an integer in place.
-     * @param scalar Divisor; if zero, this point is reset to (0, 0) and an error is written to stderr.
+     * @param scalar Divisor; if zero, this point is reset to (0, 0) and an error is written to
+     * stderr.
      * @return Reference to this modified point.
      */
     Point2D& operator/=(const int& scalar) {
@@ -278,29 +280,31 @@ struct Line {
      * @param crossingPoint Receives the intersection point when one exists; unchanged otherwise.
      * @return True if the segments intersect; otherwise false.
      */
-    bool Crosses(Line other, Point2D& crossingPoint) const {
-        // (DONE) TODO: write this code
-        Point2D r = p2 - p1;
-        Point2D s = other.p2 - other.p1;
+    bool Crosses(const Line& other, Point2D& crossingPoint) const {
+        Point2D firstDirection = p2 - p1;
+        Point2D secondDirection = other.p2 - other.p1;
 
-        float denominator = Point2D::Cross(r, s);
+        float denominator = Point2D::Cross(firstDirection, secondDirection);
 
-        if (denominator == 0) {
-            // Lines are parallel
+        // Parallel lines do not have one crossing point.
+        if (denominator == 0.0f) {
             return false;
         }
 
-        Point2D diff = other.p1 - p1;
+        Point2D difference = other.p1 - p1;
 
-        float t = Point2D::Cross(diff, s) / denominator;
-        float u = Point2D::Cross(diff, r) / denominator;
+        float firstT = Point2D::Cross(difference, secondDirection) / denominator;
 
-        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-            crossingPoint = p1 + r * t;
-            return true;
+        float secondT = Point2D::Cross(difference, firstDirection) / denominator;
+
+        // Both parameters must be within their finite segments.
+        if (firstT < 0.0f || firstT > 1.0f || secondT < 0.0f || secondT > 1.0f) {
+            return false;
         }
 
-        return false;
+        crossingPoint = p1 + firstDirection * firstT;
+
+        return true;
     }
 };
 
@@ -374,7 +378,7 @@ struct Rect {
      * @return Reference to this modified rectangle.
      */
 
-    //Took help from ChatGPT to implement the following 
+    // Took help from ChatGPT to implement the following
     Rect& operator|=(const Rect& other) {
         //(Done) TODO: write this code
         float left = std::min(topLeft.x, other.topLeft.x);
@@ -426,7 +430,7 @@ struct Rect {
      * @return Reference to this modified rectangle.
      */
 
-    //Took help from ChatGPT to implement the following
+    // Took help from ChatGPT to implement the following
     Rect& operator&=(const Rect& other) {
         //(Done) TODO: write this code
         float left = std::max(topLeft.x, other.topLeft.x);
@@ -438,8 +442,12 @@ struct Rect {
         if (right < left || bottom < top) {
             // No intersection
 
-            //Prof said "To help you think this through, we need to represent a null rectangle. If our rectangles were open, then having a 0 height/width would be fine. But, we aren't using open rectangles.
-            // So, we need another option. One option is to allow negative heights/widths to represent null rectangles. This is one option. A second option is to use NAN or ±INF. These have slightly different semantics
+            // Prof said "To help you think this through, we need to represent a null rectangle. If
+            // our rectangles were open, then having a 0 height/width would be fine. But, we aren't
+            // using open rectangles.
+            //  So, we need another option. One option is to allow negative heights/widths to
+            //  represent null rectangles. This is one option. A second option is to use NAN or
+            //  ±INF. These have slightly different semantics
 
             topLeft = Point2D(0, 0);
             width = -1;
@@ -520,6 +528,172 @@ static std::ostream& operator<<(std::ostream& os, const Rect& l) {
     // (Done)TODO: write this code
     os << "Rect(" << l.topLeft << ", " << l.width << ", " << l.height << ")";
     return os;
+}
+
+/**
+ * Tests whether two circles overlap.
+ *
+ * @param first First circle.
+ * @param second Second circle.
+ * @return True if the circles overlap or touch.
+ */
+inline bool CircleCircleCollision(const Circle& first, const Circle& second) {
+    float differenceX = first.center.x - second.center.x;
+
+    float differenceY = first.center.y - second.center.y;
+
+    float distanceSquared = differenceX * differenceX + differenceY * differenceY;
+
+    float combinedRadius = first.radius + second.radius;
+
+    return distanceSquared <= combinedRadius * combinedRadius;
+}
+
+/**
+ * Tests whether two axis-aligned rectangles overlap.
+ *
+ * @param first First rectangle.
+ * @param second Second rectangle.
+ * @return True if the rectangles overlap or touch.
+ */
+inline bool RectRectCollision(const Rect& first, const Rect& second) {
+    return first.overlaps(second);
+}
+
+/**
+ * Tests whether a circle overlaps an axis-aligned rectangle.
+ *
+ * @param circle Circle to test.
+ * @param rect Rectangle to test.
+ * @return True if the shapes overlap or touch.
+ */
+inline bool CircleRectCollision(const Circle& circle, const Rect& rect) {
+    float left = rect.topLeft.x;
+    float right = rect.topLeft.x + rect.width;
+    float top = rect.topLeft.y;
+    float bottom = rect.topLeft.y + rect.height;
+
+    float closestX = std::max(left, std::min(circle.center.x, right));
+
+    float closestY = std::max(top, std::min(circle.center.y, bottom));
+
+    float differenceX = circle.center.x - closestX;
+
+    float differenceY = circle.center.y - closestY;
+
+    float distanceSquared = differenceX * differenceX + differenceY * differenceY;
+
+    return distanceSquared <= circle.radius * circle.radius;
+}
+
+/**
+ * Tests whether two line segments cross.
+ *
+ * @param first First line.
+ * @param second Second line.
+ * @param collisionPoint Receives the crossing point.
+ * @return True if the lines cross.
+ */
+inline bool LineLineCollision(const Line& first, const Line& second, Point2D& collisionPoint) {
+    return first.Crosses(second, collisionPoint);
+}
+
+/**
+ * Finds the first point where a directed line segment intersects a circle.
+ *
+ * @param line Directed line segment from p1 to p2.
+ * @param circle Circle to test.
+ * @param collisionPoint Receives the first collision point.
+ * @return True if the line intersects the circle.
+ */
+inline bool LineCircleCollision(const Line& line, const Circle& circle, Point2D& collisionPoint) {
+    Point2D direction = line.p2 - line.p1;
+    float lineLength = line.Length();
+
+    // The line has no direction.
+    if (lineLength == 0.0f) {
+        if (line.p1.Distance(circle.center) <= circle.radius) {
+            collisionPoint = line.p1;
+            return true;
+        }
+
+        return false;
+    }
+
+    // If the line starts inside the circle, it collides immediately.
+    if (line.p1.Distance(circle.center) <= circle.radius) {
+        collisionPoint = line.p1;
+        return true;
+    }
+
+    // Find p: the closest point on the segment to the circle center.
+    Point2D closestPoint = line.ClosestPoint(circle.center);
+
+    float closestDistance = closestPoint.Distance(circle.center);
+
+    // The closest point is still outside the circle.
+    if (closestDistance > circle.radius) {
+        return false;
+    }
+
+    // Find q using the Pythagorean theorem.
+    float distanceToIntersection =
+        std::sqrt(circle.radius * circle.radius - closestDistance * closestDistance);
+
+    // Convert the line direction to a unit vector.
+    direction.Normalize();
+
+    // Move backward from the closest point toward p1.
+    collisionPoint = closestPoint - direction * distanceToIntersection;
+
+    return true;
+}
+
+/**
+ * Finds the first point where a directed line intersects a rectangle.
+ *
+ * @param line Directed line segment.
+ * @param rect Rectangle to test.
+ * @param collisionPoint Receives the first collision point.
+ * @return True if the line intersects the rectangle.
+ */
+inline bool LineRectCollision(const Line& line, const Rect& rect, Point2D& collisionPoint) {
+    float left = rect.topLeft.x;
+    float right = rect.topLeft.x + rect.width;
+    float top = rect.topLeft.y;
+    float bottom = rect.topLeft.y + rect.height;
+
+    // The line begins inside the rectangle.
+    if (line.p1.x >= left && line.p1.x <= right && line.p1.y >= top && line.p1.y <= bottom) {
+        collisionPoint = line.p1;
+        return true;
+    }
+
+    Line edges[] = {Line(left, top, right, top), Line(right, top, right, bottom),
+                    Line(right, bottom, left, bottom), Line(left, bottom, left, top)};
+
+    bool foundCollision = false;
+    float shortestDistanceSquared = 0.0f;
+
+    for (const Line& edge : edges) {
+        Point2D candidate;
+
+        if (line.Crosses(edge, candidate)) {
+            float differenceX = candidate.x - line.p1.x;
+
+            float differenceY = candidate.y - line.p1.y;
+
+            float distanceSquared = differenceX * differenceX + differenceY * differenceY;
+
+            if (!foundCollision || distanceSquared < shortestDistanceSquared) {
+                foundCollision = true;
+                shortestDistanceSquared = distanceSquared;
+                collisionPoint = candidate;
+            }
+        }
+    }
+
+    return foundCollision;
 }
 
 }  // namespace CMPUT350

@@ -1,9 +1,9 @@
 #include "GameEngine.h"
-#include "GameContext.h"
+
 #include "CollisionObject.h"
 #include "DrawContext.h"
+#include "GameContext.h"
 #include "GraphicsObject.h"
-
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 
@@ -15,13 +15,12 @@ GameEngine::GameEngine(unsigned int width, unsigned int height, const std::strin
     mWindow = std::make_shared<sf::RenderWindow>(sf::VideoMode({width, height}), name);
     mFont = std::make_shared<sf::Font>();
 
-    // Sample font loading code    
-	if (!mFont->openFromMemory(&_font, _font_len))
-    	{
-    		fprintf(stderr, "WARNING: Font did not load.\n");
-    	}
+    // Sample font loading code
+    if (!mFont->openFromMemory(&_font, _font_len)) {
+        fprintf(stderr, "WARNING: Font did not load.\n");
+    }
 
-    mWindow->setFramerateLimit(30); // Limit the framerate to 30 frames per second  
+    mWindow->setFramerateLimit(30);  // Limit the framerate to 30 frames per second
 }
 
 GameEngine::~GameEngine() {
@@ -37,6 +36,22 @@ void GameEngine::AddGameObject(std::shared_ptr<GameObject> gameObject) {
     }
 }
 
+EngineView::const_iterator GameEngine::cbegin() const { return mGameObjects.cbegin(); }
+
+EngineView::const_iterator GameEngine::cend() const { return mGameObjects.cend(); }
+
+EngineView::const_iterator GameEngine::begin() const { return mGameObjects.cbegin(); }
+
+EngineView::const_iterator GameEngine::end() const { return mGameObjects.cend(); }
+
+void GameEngine::InstallKeyDownNotification(int key, const std::string& notification) {
+    mKeyDownNotifications[key].push_back(notification);
+}
+
+void GameEngine::InstallKeyUpNotification(int key, const std::string& notification) {
+    mKeyUpNotifications[key].push_back(notification);
+}
+
 /** Runs one frame at a time until the render window closes.
  * Each frame removes dead objects, activates queued objects, dispatches input,
  * updates active objects, reports overlapping collision pairs to both objects,
@@ -45,12 +60,16 @@ void GameEngine::AddGameObject(std::shared_ptr<GameObject> gameObject) {
  * The loop does not stop merely because no game objects remain.
  */
 void GameEngine::Run() {
-    DrawContext drawContext(mWindow, mFont);
+    DrawContext screenContext(mWindow, mFont);
+    DrawContext guiContext(mWindow, mFont);
 
     GameContext context;
-    
+
     context.mEngineView = this;
-    context.ScreenContext = &drawContext;  
+    context.ScreenContext = &screenContext;
+    context.GUIContext = &guiContext;
+    context.mNotificationManager = &mNotificationManager;
+    context.currentFrame = 0;
 
     while (mWindow->isOpen())  // window is open
     {
@@ -69,6 +88,7 @@ void GameEngine::Run() {
 
         for (std::shared_ptr<GameObject>& object : objectsToActivate) {
             if (object) {
+                context.CurrObject = object;
                 object->Initialize(&context);
                 mGameObjects.push_back(std::move(object));
             }
@@ -81,18 +101,26 @@ void GameEngine::Run() {
                 mWindow->close();
                 shouldClose = true;
                 break;
-            } else if (const auto* keyPressed = event->getIf<sf::Event::TextEntered>()) {
-                char key = keyPressed->unicode;
+            } else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
+                int key = static_cast<int>(keyPressed->scancode);
 
-                if (key <= 127) {  // Only handle ASCII characters
-                    for (const auto& object : mGameObjects) {
-                        if (object) {
-                            object->HandleKeyEvent(&context, key);
-                        }
+                auto found = mKeyDownNotifications.find(key);
+
+                if (found != mKeyDownNotifications.end()) {
+                    for (const std::string& notification : found->second) {
+                        mNotificationManager.Notify(notification);
                     }
                 }
+            } else if (const auto* keyReleased = event->getIf<sf::Event::KeyReleased>()) {
+                int key = static_cast<int>(keyReleased->scancode);
 
+                auto found = mKeyUpNotifications.find(key);
 
+                if (found != mKeyUpNotifications.end()) {
+                    for (const std::string& notification : found->second) {
+                        mNotificationManager.Notify(notification);
+                    }
+                }
             }
         }
 
@@ -103,6 +131,7 @@ void GameEngine::Run() {
         // 3. Update game objects
         for (const auto& object : mGameObjects) {
             if (object) {
+                context.CurrObject = object;
                 object->Update(&context);
             }
         }
@@ -138,6 +167,7 @@ void GameEngine::Run() {
         // 5. Late updates
         for (const auto& object : mGameObjects) {
             if (object) {
+                context.CurrObject = object;
                 object->LateUpdate(&context);
             }
         }
@@ -163,6 +193,7 @@ void GameEngine::Run() {
 
         // Actually render to window
         mWindow->display();
+        context.currentFrame++;
     }
 }
 }  // namespace CMPUT350

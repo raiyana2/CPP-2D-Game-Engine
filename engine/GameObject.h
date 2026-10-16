@@ -3,8 +3,6 @@
 
 #include <string>
 
-
-
 namespace CMPUT350 {
 
 class GameContext;
@@ -38,12 +36,13 @@ public:
      */
     virtual void RenderUI(GameContext* context);
 
-    /** Handles a text-input character delivered by the window.
-     * @param context Engine and drawing services for this callback.
-     * @param key Character received from the text-entered event.
-     * @return True if the object handled the character; otherwise false.
-     */
-    virtual bool HandleKeyEvent(GameContext* context, char key);
+    // /** Handles a text-input character delivered by the window.
+    //  * @param context Engine and drawing services for this callback.
+    //  * @param key Character received from the text-entered event.
+    //  * @return True if the object handled the character; otherwise false.
+    //  */
+    // virtual bool HandleKeyEvent(GameContext* context, char key);
+    virtual void ReceiveNotification(const std::string& key);
 
     /** Reports whether the engine should keep this object active.
      * @return True while alive; false causes removal at the start of a later frame.
