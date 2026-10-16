@@ -1,6 +1,10 @@
 #ifndef GAMEOBJECT_H
 #define GAMEOBJECT_H
 
+#include <string>
+
+
+
 namespace CMPUT350 {
 
 class GameContext;
@@ -50,6 +54,10 @@ public:
      * @return No value.
      */
     virtual void Kill();
+
+
+    virtual void ReceiveNotification(const std::string& message);
+
 
 private:
     bool mIsAlive = true;

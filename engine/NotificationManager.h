@@ -1,6 +1,7 @@
 #ifndef NOTIFICATIONMANAGER_H
 #define NOTIFICATIONMANAGER_H
 
+
 #include <memory>
 #include <string>
 #include <unordered_map>

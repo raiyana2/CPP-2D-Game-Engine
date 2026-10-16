@@ -8,6 +8,10 @@ void GameObject::LateUpdate(GameContext *context) { return; }
 void GameObject::RenderUI(GameContext *contextrender) { return; }
 bool GameObject::HandleKeyEvent(GameContext *context, char key) { return false; }
 
+void GameObject::ReceiveNotification(const std::string& message)
+{
+}
+
 bool GameObject::IsAlive() const {
     return mIsAlive;
 }
