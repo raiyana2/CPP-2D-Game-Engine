@@ -51,7 +51,8 @@ void Enemy::Update(CMPUT350::GameContext* context)
 
         if (segmentCount > 0)
         {
-            mPathDistance += 3.0f;
+            const float speed = mEntering ? 10.0f : 3.0f;
+            mPathDistance += speed;
             mPathTime = mPathDistance >= mCurve.GetLength()
                 ? static_cast<float>(segmentCount) : mCurve.GetTimeAtDistance(mPathDistance);
 
