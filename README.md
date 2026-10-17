@@ -7,7 +7,7 @@ and description of limited AI use do not describe this Part 1B update.
 ## Build and run
 
 ```sh
-cmake -S . -B build
+cmake --preset debug
 cmake --build build
 ./build/Project1
 ```
