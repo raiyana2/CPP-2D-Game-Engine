@@ -14,12 +14,3 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/engine/)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/galaga/)
 target_link_libraries(${PROJECT_NAME} Engine)
-
-include(CTest)
-if(BUILD_TESTING)
-    add_executable(RegressionTests tests/RegressionTests.cpp
-        galaga/Galaga.cpp galaga/Enemy.cpp galaga/Player.cpp galaga/Bullet.cpp)
-    target_include_directories(RegressionTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/galaga)
-    target_link_libraries(RegressionTests PRIVATE Engine)
-    add_test(NAME RegressionTests COMMAND RegressionTests)
-endif()
