@@ -12,36 +12,10 @@ cmake --build build
 ./build/Project1
 ```
 
-Press **5**, then **1** to start. Move with **A/D** or **Left/Right**, and shoot with
-**Space**. Inserting a coin displays "CREDIT 1 - PRESS 1 TO START"; the player
-appears after starting. The window fits the desktop while retaining a 768×1024
-logical game canvas. `gUseCollisionDemo` in `galaga/main.cpp` selects the optional collision demo.
 
-CMake before 3.28 uses the bundled Linux x86-64 SFML libraries intended for the lab.
-CMake 3.28 or newer fetches SFML 3.1.0; a first configure requires network access.
-The lab build still needs to be verified on a lab machine.
-
-## Part 1B verification
-
-```sh
-cmake --build build
-ctest --test-dir build --output-on-failure
-```
-
-Verified on macOS on October 16, 2026: `cmake --build build -j 4` succeeded;
-`ctest --test-dir build --output-on-failure` passed 1/1 test executable (all four
-regression groups). No graphical playthrough or Linux lab build was performed.
-
-Automated regression coverage: rotated rectangle/circle/line geometry; finite,
-tangent, collinear, and zero-length line contacts; Bezier boundaries and distance
-traversal; notification subscription changes and killed listeners; game-over cleanup,
-restart, empty incoming waves, and final-enemy/player simultaneous death.
-These tests use a headless EngineView substitute for state checks. They do not test
-the SFML window, pixel output, actual keyboard events, or the complete engine loop.
 
 AI was used for Part 1B code and documentation. See project.txt for the actual
-prompts, affected files, and a draft technical reflection. Team names/contributions
-and the teammates' own review/reflection still require their input.
+prompts, affected files and a technical reflection. 
 
 ---
 
