@@ -3,6 +3,7 @@
 #include "Enemy.h"
 #include "Bullet.h"
 #include "Player.h"
+#include "Stars.h"
 #include "GameContext.h"
 #include "NotificationManager.h"
 #include "Keyboard.h"
@@ -35,6 +36,9 @@ void Galaga::Initialize(CMPUT350::GameContext* context)
 {
     mEngineView = context->mEngineView;
     mNotificationManager = context->mNotificationManager;
+
+    context->mEngineView->AddGameObject(std::make_shared<Stars>(
+        200, CMPUT350::Rect(0, 0, mWidth, mHeight)));
 
     // Galaga listens for these game notifications
     mNotificationManager->Register(

@@ -146,7 +146,7 @@ Examples of prompts included:
    - Collision handling
    - Enemy movement
 
-AI contributed to portions of:
+AI-assisted changes included portions of:
 
 - Collision geometry and collision processing
 - Bezier movement and arc-length approximation
