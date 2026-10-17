@@ -6,12 +6,17 @@ namespace CMPUT350 {
 class GameEngine;
 }
 
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "CollisionObject.h"
 #include "EngineView.h"
 #include "GameObject.h"
 #include "MathUtil.h"
+#include "NotificationManager.h"
 #include <SFML/Graphics.hpp>
-#include <vector>
-#include <memory>
 
 namespace CMPUT350 {
 
@@ -41,16 +46,44 @@ public:
      */
     void AddGameObject(std::shared_ptr<GameObject> gameObject) override;
 
+    /** Returns an iterator to the first active game object. */
+    EngineView::const_iterator cbegin() const override;
+
+    /** Returns an iterator past the final active game object. */
+    EngineView::const_iterator cend() const override;
+
+    /** Returns an iterator to the first active game object. */
+    EngineView::const_iterator begin() const override;
+
+    /** Returns an iterator past the final active game object. */
+    EngineView::const_iterator end() const override;
+
     /** Runs the event, update, collision, and rendering loop until the window closes.
      * @return No value.
      */
     void Run();
+
+    /** Registers a notification for a key-press event. */
+    void InstallKeyDownNotification(int key, const std::string& notification) override;
+
+    /** Registers a notification for a key-release event. */
+    void InstallKeyUpNotification(int key, const std::string& notification) override;
 
 private:
     std::shared_ptr<sf::RenderWindow> mWindow;
     std::shared_ptr<sf::Font> mFont;
     std::vector<std::shared_ptr<GameObject>> mGameObjects;
     std::vector<std::shared_ptr<GameObject>> mPendingGameObjects;
+    NotificationManager mNotificationManager;
+    std::unordered_map<int, std::vector<std::string>> mKeyDownNotifications;
+    std::unordered_map<int, std::vector<std::string>> mKeyUpNotifications;
+
+    /**
+     * Performs broad-phase and component-level collision processing.
+     *
+     * @param context Context used to transform collision geometry.
+     */
+    void ProcessCollisions(DrawContext& context);
 };
 
 }  // namespace CMPUT350

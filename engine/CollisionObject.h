@@ -2,27 +2,79 @@
 #define COLLISION_OBJECT_H
 
 #include <memory>
+#include <vector>
 
 #include "GraphicsObject.h"
 #include "MathUtil.h"
 
 namespace CMPUT350 {
 
-class CollisionObject : public GraphicsObject {
-public:
-    /** Notifies this object that it overlaps another collision object.
-     * The engine calls this on both objects in a colliding pair.
-     * @param obj The other object in the pair.
-     * @return No value.
-     */
-    virtual void CollisionEnter(const std::shared_ptr<CollisionObject> &obj) = 0;
-
-    /** Gets the current axis-aligned bounds used for collision checks.
-     * @return Reference to this object's bounds; the referenced rectangle must remain valid.
-     */
-    virtual const Rect &GetBounds() = 0;
+enum class ShapeType
+{
+    kLine,
+    kCircle,
+    kRect
 };
 
-}  // namespace CMPUT350
+union ShapeUnion
+{
+    /** Stores an active line member; Shape::t identifies it. */
+    ShapeUnion(Line l) : line(l) {}
+    /** Stores an active circle member. */
+    ShapeUnion(Circle c) : circle(c) {}
+    /** Stores an active local axis-aligned rectangle member. */
+    ShapeUnion(Rect r) : rect(r) {}
+
+    Line line;
+    Circle circle;
+    Rect rect;
+};
+
+struct Shape
+{
+    /** Creates a tagged local line component. */
+    Shape(const Line& l)
+        : shape(l), t(ShapeType::kLine) {}
+
+    /** Creates a tagged local circle component. */
+    Shape(const Circle& c)
+        : shape(c), t(ShapeType::kCircle) {}
+
+    /** Creates a tagged local rectangle component. */
+    Shape(const Rect& r)
+        : shape(r), t(ShapeType::kRect) {}
+
+    ShapeUnion shape;
+    ShapeType t;
+};
+
+class CollisionObject : public GraphicsObject
+{
+public:
+    /** Receives one collision with another object. */
+    virtual void CollisionEnter(
+        const std::shared_ptr<CollisionObject>& obj
+    ) = 0;
+
+    /** Receives a directed-line contact in this object's local space; defaults to the plain callback. */
+    virtual void CollisionEnter(
+        const std::shared_ptr<CollisionObject>& obj,
+        const Point2D& collisionPoint
+    )
+    {
+        CollisionEnter(obj);
+    }
+
+    /** Returns local broad-phase bounds enclosing every collision component. */
+    virtual const Rect& GetBounds() = 0;
+
+    /** Returns local shapes for detailed collision tests. */
+    virtual const std::vector<Shape>& GetShapes() = 0;
+
+    /** Reports whether this object is stationary; currently informational. */
+    virtual bool IsStatic() const = 0;
+};
+
+}
 
 #endif
