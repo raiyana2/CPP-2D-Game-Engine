@@ -78,6 +78,13 @@ private:
     std::unordered_map<int, std::vector<std::string>> mKeyDownNotifications;
     std::unordered_map<int, std::vector<std::string>> mKeyUpNotifications;
 
+    /** Converts one collision shape from object-local space to world space. */
+    Shape TransformShape(const Shape& shape, DrawContext& context);
+
+    /** Tests two world-space component shapes and optionally returns a line contact. */
+    bool CheckShapeCollision(const Shape& first, const Shape& second,
+                             Point2D& collisionPoint, bool& hasCollisionPoint);
+
     /**
      * Performs broad-phase and component-level collision processing.
      *

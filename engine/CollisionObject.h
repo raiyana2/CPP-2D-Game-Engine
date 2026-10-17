@@ -9,15 +9,9 @@
 
 namespace CMPUT350 {
 
-enum class ShapeType
-{
-    kLine,
-    kCircle,
-    kRect
-};
+enum class ShapeType { kLine, kCircle, kRect };
 
-union ShapeUnion
-{
+union ShapeUnion {
     /** Stores an active line member; Shape::t identifies it. */
     ShapeUnion(Line l) : line(l) {}
     /** Stores an active circle member. */
@@ -30,38 +24,29 @@ union ShapeUnion
     Rect rect;
 };
 
-struct Shape
-{
+struct Shape {
     /** Creates a tagged local line component. */
-    Shape(const Line& l)
-        : shape(l), t(ShapeType::kLine) {}
+    Shape(const Line& l) : shape(l), t(ShapeType::kLine) {}
 
     /** Creates a tagged local circle component. */
-    Shape(const Circle& c)
-        : shape(c), t(ShapeType::kCircle) {}
+    Shape(const Circle& c) : shape(c), t(ShapeType::kCircle) {}
 
     /** Creates a tagged local rectangle component. */
-    Shape(const Rect& r)
-        : shape(r), t(ShapeType::kRect) {}
+    Shape(const Rect& r) : shape(r), t(ShapeType::kRect) {}
 
     ShapeUnion shape;
     ShapeType t;
 };
 
-class CollisionObject : public GraphicsObject
-{
+class CollisionObject : public GraphicsObject {
 public:
     /** Receives one collision with another object. */
-    virtual void CollisionEnter(
-        const std::shared_ptr<CollisionObject>& obj
-    ) = 0;
+    virtual void CollisionEnter(const std::shared_ptr<CollisionObject>& obj) = 0;
 
-    /** Receives a directed-line contact in this object's local space; defaults to the plain callback. */
-    virtual void CollisionEnter(
-        const std::shared_ptr<CollisionObject>& obj,
-        const Point2D& collisionPoint
-    )
-    {
+    /** Receives a directed-line contact in this object's local space; defaults to the plain
+     * callback. */
+    virtual void CollisionEnter(const std::shared_ptr<CollisionObject>& obj,
+                                const Point2D& collisionPoint) {
         CollisionEnter(obj);
     }
 
@@ -71,10 +56,10 @@ public:
     /** Returns local shapes for detailed collision tests. */
     virtual const std::vector<Shape>& GetShapes() = 0;
 
-    /** Reports whether this object is stationary; currently informational. */
+    /** Reports whether the collision object remains stationary. */
     virtual bool IsStatic() const = 0;
 };
 
-}
+}  // namespace CMPUT350
 
 #endif

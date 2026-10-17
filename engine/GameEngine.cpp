@@ -1,8 +1,6 @@
 #include "GameEngine.h"
 
 #include "CollisionObject.h"
-#include "CollisionGeometry.h"
-#include <algorithm>
 #include "DrawContext.h"
 #include "GameContext.h"
 #include "GraphicsObject.h"
@@ -19,8 +17,8 @@ GameEngine::GameEngine(unsigned int width, unsigned int height, const std::strin
     sf::Vector2u windowSize(std::max(1u, static_cast<unsigned int>(width * scale)),
                             std::max(1u, static_cast<unsigned int>(height * scale)));
     mWindow = std::make_shared<sf::RenderWindow>(sf::VideoMode(windowSize), name);
-    mWindow->setView(sf::View(sf::FloatRect({0.0f, 0.0f},
-                                          {static_cast<float>(width), static_cast<float>(height)})));
+    mWindow->setView(sf::View(
+        sf::FloatRect({0.0f, 0.0f}, {static_cast<float>(width), static_cast<float>(height)})));
     mFont = std::make_shared<sf::Font>();
 
     // Sample font loading code
@@ -60,70 +58,175 @@ void GameEngine::InstallKeyUpNotification(int key, const std::string& notificati
     mKeyUpNotifications[key].push_back(notification);
 }
 
-void GameEngine::ProcessCollisions(DrawContext& context) {
-    struct Contact {
-        std::shared_ptr<CollisionObject> first, second;
-        Point2D point;
-        bool hasPoint;
-        float distance;
-    };
-    std::vector<Contact> contacts;
-    std::vector<std::shared_ptr<CollisionObject>> objects;
-    for (const auto& object : mGameObjects) {
-        auto collision = std::dynamic_pointer_cast<CollisionObject>(object);
-        if (collision && collision->IsAlive()) objects.push_back(collision);
+Shape GameEngine::TransformShape(const Shape& shape, DrawContext& context) {
+    if (shape.t == ShapeType::kLine) {
+        Line line = shape.shape.line;
+        line.p1 = context.Transform(line.p1);
+        line.p2 = context.Transform(line.p2);
+        return Shape(line);
     }
-    for (std::size_t i = 0; i < objects.size(); ++i) {
-        auto first = objects[i];
-        ObjectPose fp{first->GetLocation(), first->GetRotation()};
-        context.SetContextOffset(fp.location);
-        context.SetContextRotation(fp.rotation);
-        Rect firstBounds = context.Transform(first->GetBounds());
-        for (std::size_t j = i + 1; j < objects.size(); ++j) {
-            auto second = objects[j];
-            ObjectPose sp{second->GetLocation(), second->GetRotation()};
-            context.SetContextOffset(sp.location);
-            context.SetContextRotation(sp.rotation);
-            if (!firstBounds.overlaps(context.Transform(second->GetBounds()))) continue;
-            bool collided = false, hasPoint = false;
-            Point2D point;
-            float nearest = 0;
-            for (const Shape& a : first->GetShapes()) {
-                for (const Shape& b : second->GetShapes()) {
-                    Point2D candidate;
+
+    if (shape.t == ShapeType::kCircle) {
+        Circle circle = shape.shape.circle;
+        circle.center = context.Transform(circle.center);
+        return Shape(circle);
+    }
+
+    return Shape(context.Transform(shape.shape.rect));
+}
+
+bool GameEngine::CheckShapeCollision(const Shape& first, const Shape& second,
+                                     Point2D& collisionPoint, bool& hasCollisionPoint) {
+    hasCollisionPoint = false;
+
+    if (first.t == ShapeType::kLine && second.t == ShapeType::kLine) {
+        bool collided = LineLineCollision(first.shape.line, second.shape.line, collisionPoint);
+        hasCollisionPoint = collided;
+        return collided;
+    }
+
+    if (first.t == ShapeType::kLine && second.t == ShapeType::kCircle) {
+        bool collided = LineCircleCollision(first.shape.line, second.shape.circle, collisionPoint);
+        hasCollisionPoint = collided;
+        return collided;
+    }
+
+    if (first.t == ShapeType::kCircle && second.t == ShapeType::kLine) {
+        bool collided = LineCircleCollision(second.shape.line, first.shape.circle, collisionPoint);
+        hasCollisionPoint = collided;
+        return collided;
+    }
+
+    if (first.t == ShapeType::kLine && second.t == ShapeType::kRect) {
+        bool collided = LineRectCollision(first.shape.line, second.shape.rect, collisionPoint);
+        hasCollisionPoint = collided;
+        return collided;
+    }
+
+    if (first.t == ShapeType::kRect && second.t == ShapeType::kLine) {
+        bool collided = LineRectCollision(second.shape.line, first.shape.rect, collisionPoint);
+        hasCollisionPoint = collided;
+        return collided;
+    }
+
+    if (first.t == ShapeType::kCircle && second.t == ShapeType::kCircle) {
+        return CircleCircleCollision(first.shape.circle, second.shape.circle);
+    }
+
+    if (first.t == ShapeType::kCircle && second.t == ShapeType::kRect) {
+        return CircleRectCollision(first.shape.circle, second.shape.rect);
+    }
+
+    if (first.t == ShapeType::kRect && second.t == ShapeType::kCircle) {
+        return CircleRectCollision(second.shape.circle, first.shape.rect);
+    }
+
+    if (first.t == ShapeType::kRect && second.t == ShapeType::kRect) {
+        return RectRectCollision(first.shape.rect, second.shape.rect);
+    }
+
+    return false;
+}
+
+void GameEngine::ProcessCollisions(DrawContext& context) {
+    std::vector<std::shared_ptr<CollisionObject>> collisionObjects;
+
+    for (const auto& object : mGameObjects) {
+        auto collisionObject = std::dynamic_pointer_cast<CollisionObject>(object);
+        if (collisionObject && collisionObject->IsAlive()) {
+            collisionObjects.push_back(collisionObject);
+        }
+    }
+
+    for (std::size_t i = 0; i < collisionObjects.size(); ++i) {
+        auto first = collisionObjects[i];
+
+        for (std::size_t j = i + 1; j < collisionObjects.size(); ++j) {
+            auto second = collisionObjects[j];
+
+            if (!first->IsAlive() || !second->IsAlive()) {
+                continue;
+            }
+
+            context.SetContextOffset(first->GetLocation());
+            context.SetContextRotation(first->GetRotation());
+            Rect firstWorldBounds = context.Transform(first->GetBounds());
+
+            context.SetContextOffset(second->GetLocation());
+            context.SetContextRotation(second->GetRotation());
+            Rect secondWorldBounds = context.Transform(second->GetBounds());
+
+            if (!firstWorldBounds.overlaps(secondWorldBounds)) {
+                continue;
+            }
+
+            std::vector<Shape> firstWorldShapes;
+            context.SetContextOffset(first->GetLocation());
+            context.SetContextRotation(first->GetRotation());
+            for (const Shape& shape : first->GetShapes()) {
+                firstWorldShapes.push_back(TransformShape(shape, context));
+            }
+
+            std::vector<Shape> secondWorldShapes;
+            context.SetContextOffset(second->GetLocation());
+            context.SetContextRotation(second->GetRotation());
+            for (const Shape& shape : second->GetShapes()) {
+                secondWorldShapes.push_back(TransformShape(shape, context));
+            }
+
+            bool objectsCollided = false;
+            bool foundCollisionPoint = false;
+            Point2D worldCollisionPoint;
+            float shortestDistanceSquared = 0.0f;
+
+            for (const Shape& firstShape : firstWorldShapes) {
+                for (const Shape& secondShape : secondWorldShapes) {
+                    Point2D candidatePoint;
                     bool candidateHasPoint = false;
-                    if (!ComponentCollision(a, fp, b, sp, candidate, candidateHasPoint)) continue;
-                    collided = true;
-                    if (!candidateHasPoint) continue;
-                    Point2D origin = a.t == ShapeType::kLine ? fp.World(a.shape.line.p1)
-                                                                          : sp.World(b.shape.line.p1);
-                    Point2D delta = candidate - origin;
-                    float distance = delta.Dot(delta);
-                    if (!hasPoint || distance < nearest) {
-                        hasPoint = true;
-                        nearest = distance;
-                        point = candidate;
+
+                    if (!CheckShapeCollision(firstShape, secondShape, candidatePoint,
+                                             candidateHasPoint)) {
+                        continue;
+                    }
+
+                    objectsCollided = true;
+
+                    if (candidateHasPoint) {
+                        Point2D lineStart = firstShape.t == ShapeType::kLine
+                                                ? firstShape.shape.line.p1
+                                                : secondShape.shape.line.p1;
+                        Point2D difference = candidatePoint - lineStart;
+                        float distanceSquared = difference.Dot(difference);
+
+                        if (!foundCollisionPoint || distanceSquared < shortestDistanceSquared) {
+                            foundCollisionPoint = true;
+                            shortestDistanceSquared = distanceSquared;
+                            worldCollisionPoint = candidatePoint;
+                        }
                     }
                 }
             }
-            if (collided) contacts.push_back({first, second, point, hasPoint, nearest});
-        }
-    }
-    // Resolve nearer line hits first so a destroyed bullet cannot damage a farther target.
-    std::stable_sort(contacts.begin(), contacts.end(), [](const Contact& a, const Contact& b) {
-        return a.distance < b.distance;
-    });
-    for (const Contact& contact : contacts) {
-        if (!contact.first->IsAlive() || !contact.second->IsAlive()) continue;
-        if (contact.hasPoint) {
-            ObjectPose fp{contact.first->GetLocation(), contact.first->GetRotation()};
-            ObjectPose sp{contact.second->GetLocation(), contact.second->GetRotation()};
-            // Both sides receive this contact even if the first callback kills an object.
-            contact.first->CollisionEnter(contact.second, fp.Local(contact.point));
-            contact.second->CollisionEnter(contact.first, sp.Local(contact.point));
-        } else {
-            contact.first->CollisionEnter(contact.second);
-            contact.second->CollisionEnter(contact.first);
+
+            if (!objectsCollided) {
+                continue;
+            }
+
+            if (!foundCollisionPoint) {
+                first->CollisionEnter(second);
+                second->CollisionEnter(first);
+                continue;
+            }
+
+            context.SetContextOffset(first->GetLocation());
+            context.SetContextRotation(first->GetRotation());
+            Point2D firstLocalPoint = context.ReverseTransform(worldCollisionPoint);
+
+            context.SetContextOffset(second->GetLocation());
+            context.SetContextRotation(second->GetRotation());
+            Point2D secondLocalPoint = context.ReverseTransform(worldCollisionPoint);
+
+            first->CollisionEnter(second, firstLocalPoint);
+            second->CollisionEnter(first, secondLocalPoint);
         }
     }
 }
